@@ -221,12 +221,14 @@ def main():
     with open(out_path, 'wb') as f:
         f.write(output)
 
+    if warnings:
+        print()
+        for w in warnings:
+            print(f"[!] {w}")
+
     print(f"\n[+] Output: {out_path}")
     print(f"[+] Size: {len(output)} bytes ({len(output)/1024:.1f} KB)")
     print(f"[+] VALID")
-
-    for w in warnings:
-        print(f"[!] Warning: {w}")
 
 
 def build_simple_output(text_data, entry_offset):
@@ -353,7 +355,7 @@ def report(errors, warnings):
     for e in errors:
         print(f"[-] ERROR: {e}")
     for w in warnings:
-        print(f"[!] Warning: {w}")
+        print(f"[!] {w}")
     if errors:
         print("\n[-] VALIDATION FAILED")
         sys.exit(1)
