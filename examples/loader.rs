@@ -3,6 +3,9 @@
 //! This is a development/testing tool, NOT part of the PIC payload itself.
 //! It uses standard WinAPI to allocate RWX memory, copy the payload, and jump.
 //!
+//! The payload runs on an 8 MB thread to give dinvk's deep call chains
+//! (Module::find, syscall!, WinExec → CreateProcess) enough stack headroom.
+//!
 //! Usage:
 //!   cargo run --example loader -- payload.bin
 
@@ -10,8 +13,6 @@ use std::env;
 use std::fs;
 use std::process;
 
-// We use the Windows API directly here because the *loader* is a normal
-// binary -- only the *payload* needs to be position-independent.
 #[link(name = "kernel32")]
 extern "system" {
     fn VirtualAlloc(addr: *mut u8, size: usize, alloc_type: u32, protect: u32) -> *mut u8;
@@ -46,8 +47,21 @@ fn main() {
 
     println!("[*] Payload: {} bytes from {}", payload.len(), path);
 
+    // Run payload on a thread with 8 MB stack.
+    // The default 1 MB thread stack overflows: dinvk's PEB-walk + indirect
+    // syscall resolution + WinExec → CreateProcess is a deep call chain.
+    let result = std::thread::Builder::new()
+        .stack_size(8 * 1024 * 1024)
+        .spawn(move || run_payload(&payload))
+        .expect("failed to spawn loader thread")
+        .join()
+        .expect("loader thread panicked");
+
+    process::exit(result);
+}
+
+fn run_payload(payload: &[u8]) -> i32 {
     unsafe {
-        // Allocate RWX memory for the payload
         let base = VirtualAlloc(
             std::ptr::null_mut(),
             payload.len(),
@@ -57,18 +71,15 @@ fn main() {
 
         if base.is_null() {
             eprintln!("[-] VirtualAlloc failed");
-            process::exit(1);
+            return 1;
         }
 
         println!("[*] Allocated at {:p}", base);
 
-        // Copy payload into executable memory
         std::ptr::copy_nonoverlapping(payload.as_ptr(), base, payload.len());
 
         println!("[*] Executing payload...");
 
-        // Cast to function pointer and call
-        // The PIC entry returns a u32 status code (0 = success)
         let entry: unsafe extern "system" fn() -> u32 = std::mem::transmute(base);
         let status = entry();
 
@@ -79,7 +90,7 @@ fn main() {
             println!("[-] Payload returned error code {}", status);
         }
 
-        // Free the allocation
         VirtualFree(base, 0, MEM_RELEASE);
+        0
     }
 }

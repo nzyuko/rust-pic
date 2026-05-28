@@ -2,7 +2,7 @@
 name = "pic-example"
 version = "0.1.0"
 edition = "2021"
-description = "Rust PIC (Position-Independent Code) shellcode example using dinvk"
+description = "Rust PIC (Position-Independent Code) shellcode — fully self-contained, no external dependencies"
 license = "MIT"
 
 [features]
@@ -10,7 +10,6 @@ default = []
 pic = []
 
 [dependencies]
-dinvk = { git = "https://github.com/joaoviictorti/dinvk.git", features = ["alloc"] }
 
 [[bin]]
 name = "pic_example"

@@ -185,7 +185,7 @@ def main():
         found = [name.decode() for name in api_names if name in text_data]
         if found:
             for name in found:
-                warnings.append(f"Plaintext string in .text: {name} (dinvk runtime lookup)")
+                warnings.append(f"Plaintext string in .text: {name} (PEB walk runtime lookup)")
         else:
             print("[+] No plaintext API/DLL names")
 
