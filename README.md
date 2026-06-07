@@ -1,8 +1,10 @@
 # rust-pic
 
-This repo shows the difference between a normal Rust `.exe` and a PIC-style build.
+A Rust shellcode builder for Windows.
 
-A normal executable gets help from the Windows loader. Shellcode is different. It is just bytes in memory, so it has to find what it needs by itself.
+It builds a small PIC-style Rust payload, checks the PE wrapper, and extracts the bytes into `payload.bin`.
+
+The normal build is just for quick development. The PIC build is the one used for shellcode output.
 
 The code keeps the important parts in one place: the custom entry point, the `no_std` build, the PEB walk, export lookup, indirect syscall demo, and payload extraction.
 
@@ -14,13 +16,13 @@ Normal build:
 cargo build --release
 ```
 
-PIC build:
+Shellcode build:
 
 ```powershell
 cargo build --release --features pic
 ```
 
-Extract the payload:
+Extract shellcode bytes:
 
 ```powershell
 python tools\validate_pic.py target\release\pic_example.exe -o payload.bin
@@ -28,7 +30,7 @@ python tools\validate_pic.py target\release\pic_example.exe -o payload.bin
 
 ## test
 
-Run the extracted payload with the local loader:
+Run the extracted shellcode with the local loader:
 
 ```powershell
 cargo run --example loader -- payload.bin
